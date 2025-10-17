@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strings"
 )
 
 const ADDRESS = "0.0.0.0:6379"
@@ -30,33 +29,12 @@ func run() error {
 		return fmt.Errorf("binding to address: %s", ADDRESS)
 	}
 
-	conn, err := listener.Accept()
-	if err != nil {
-		slog.Error("accepting connection", "err", err.Error())
-	}
-
-	buffer := make([]byte, 1024)
 	for {
-		n, err := conn.Read(buffer)
+		conn, err := listener.Accept()
 		if err != nil {
-			panic(err)
+			slog.Error("accepting connection", "err", err.Error())
 		}
 
-		if n == 0 {
-			conn.Write([]byte("no data received"))
-		}
-
-		bufferString := string(buffer)
-		parts := strings.Split(bufferString, "\r\n")
-
-		if parts[0] == "*" {
-			parts = parts[1:]
-		}
-
-		for i := 2; i < len(parts); i += 2 {
-			if parts[i] == "PING" {
-				conn.Write([]byte("+PONG\r\n"))
-			}
-		}
+		go handleConnection(conn)
 	}
 }
