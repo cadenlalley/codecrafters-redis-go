@@ -7,12 +7,7 @@ import (
 )
 
 func handleConnection(conn net.Conn) {
-	defer func() {
-		err := conn.Close()
-		if err != nil {
-			slog.Error("closing client connection", "err", err.Error())
-		}
-	}()
+	defer conn.Close()
 
 	buffer := make([]byte, 1024)
 	for {
