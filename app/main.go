@@ -2,21 +2,43 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 )
 
-func main() {
-	fmt.Println("Logs from your program will appear here!")
+const ADDRESS = "0.0.0.0:6379"
 
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
+func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	err := run()
 	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
+		slog.Error("starting server", "err", err.Error())
 		os.Exit(1)
 	}
-	_, err = l.Accept()
+
+	os.Exit(0)
+}
+
+func run() error {
+	slog.Info("starting server", "address", ADDRESS)
+
+	listener, err := net.Listen("tcp", ADDRESS)
 	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+		return fmt.Errorf("binding to address: %s", ADDRESS)
 	}
+
+	conn, err := listener.Accept()
+	if err != nil {
+		slog.Error("accepting connection", "err", err.Error())
+	}
+
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if n > 0 {
+		conn.Write([]byte("+PONG\r\n"))
+	}
+
+	return nil
 }
