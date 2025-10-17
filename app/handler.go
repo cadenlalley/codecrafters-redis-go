@@ -3,7 +3,8 @@ package main
 import (
 	"log/slog"
 	"net"
-	"strings"
+
+	"github.com/codecrafters-io/redis-starter-go/parser"
 )
 
 func handleConnection(conn net.Conn) {
@@ -20,16 +21,12 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte("no data received"))
 		}
 
-		bufferString := string(buffer)
-		parts := strings.Split(bufferString, "\r\n")
-		if parts[0] == "*" {
-			parts = parts[1:]
+		command := parser.Decode(buffer)
+		response, err := command.Run()
+		if err != nil {
+			slog.Error("running command", "err", err.Error())
 		}
 
-		for i := 2; i < len(parts); i += 2 {
-			if parts[i] == "PING" {
-				conn.Write([]byte("+PONG\r\n"))
-			}
-		}
+		conn.Write([]byte(response))
 	}
 }
