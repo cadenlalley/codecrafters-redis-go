@@ -21,8 +21,6 @@ func handleConnection(conn net.Conn) {
 		}
 
 		bufferString := string(buffer)
-		slog.Info("got command", "command", bufferString)
-
 		parts := strings.Split(bufferString, "\r\n")
 		if parts[0] == "*" {
 			parts = parts[1:]
