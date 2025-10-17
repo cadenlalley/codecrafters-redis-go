@@ -33,6 +33,7 @@ func run() error {
 		conn, err := listener.Accept()
 		if err != nil {
 			slog.Error("accepting connection", "err", err.Error())
+			continue
 		}
 
 		go handleConnection(conn)
