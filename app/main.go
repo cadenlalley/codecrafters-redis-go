@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strings"
 )
 
 const ADDRESS = "0.0.0.0:6379"
@@ -35,10 +36,27 @@ func run() error {
 	}
 
 	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if n > 0 {
-		conn.Write([]byte("+PONG\r\n"))
-	}
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			panic(err)
+		}
 
-	return nil
+		if n == 0 {
+			conn.Write([]byte("no data received"))
+		}
+
+		bufferString := string(buffer)
+		parts := strings.Split(bufferString, "\r\n")
+
+		if parts[0] == "*" {
+			parts = parts[1:]
+		}
+
+		for i := 2; i < len(parts); i += 2 {
+			if parts[i] == "PING" {
+				conn.Write([]byte("+PONG\r\n"))
+			}
+		}
+	}
 }
