@@ -22,10 +22,7 @@ func handleConnection(conn net.Conn) {
 		}
 
 		command := parser.Decode(buffer)
-		response, err := command.Run()
-		if err != nil {
-			slog.Error("running command", "err", err.Error())
-		}
+		response := command.Run()
 
 		conn.Write([]byte(response))
 	}

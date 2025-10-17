@@ -26,8 +26,7 @@ func TestEcho(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			response, err := testCase.command.Run()
-			assert.NoError(t, err)
+			response := testCase.command.Run()
 
 			assert.Equal(t, testCase.expectedResponse, response)
 		})
