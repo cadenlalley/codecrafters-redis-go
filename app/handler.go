@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"io"
 	"log/slog"
 	"net"
 
@@ -14,15 +16,17 @@ func handleConnection(conn net.Conn) {
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
-			slog.Error("reading bytes from connection", "err", err.Error())
+			if errors.Is(err, io.EOF) {
+				return
+			}
 		}
 
-		if n == 0 {
-			conn.Write([]byte("no data received"))
-		}
+		command := parser.Decode(buffer[:n])
+		slog.Info("received command", "command", command)
 
-		command := parser.Decode(buffer)
 		response := command.Run()
+
+		slog.Info("responding to client", "response", response)
 
 		conn.Write([]byte(response))
 	}

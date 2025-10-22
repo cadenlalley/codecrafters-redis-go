@@ -1,7 +1,9 @@
 package commands
 
 import (
-	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/cache"
 	"github.com/codecrafters-io/redis-starter-go/resp"
@@ -13,14 +15,14 @@ type Command struct {
 }
 
 const (
-	PING = "PING"
-	ECHO = "ECHO"
-	SET  = "SET"
-	GET  = "GET"
+	PING = "ping"
+	ECHO = "echo"
+	SET  = "set"
+	GET  = "get"
 )
 
 func (c Command) Run() string {
-	switch c.Command {
+	switch strings.ToLower(c.Command) {
 	case PING:
 		return ping()
 	case ECHO:
@@ -29,37 +31,63 @@ func (c Command) Run() string {
 		return set(c.Arguments...)
 	case GET:
 		return get(c.Arguments...)
+	default:
+		return resp.NewErrorResponse("command not found")
 	}
-
-	return "command not found"
 }
 
 func ping() string {
-	return fmt.Sprintf(resp.SIMPLESTRING, "PONG")
+	return resp.NewSimpleString("PONG")
 }
 
 func echo(args ...string) string {
 	if len(args) == 0 {
-		return ""
+		return resp.NewErrorResponse("wrong number of arguments for the echo command")
 	}
 
-	return fmt.Sprintf(resp.BULKSTRING, len(args[0]), args[0])
+	return resp.NewBulkString(args[0])
 }
 
 func set(args ...string) string {
-	err := cache.Set(args[0], args[1])
-	if err != nil {
-		return "IDK"
+	if len(args) < 2 || len(args)%2 != 0 {
+		return resp.NewErrorResponse("wrong number of arguments for the set command")
 	}
 
-	return resp.GetOKResponse()
+	cacheItem := cache.Item{
+		Value: args[1],
+	}
+
+	if len(args) > 2 {
+		exp, err := strconv.Atoi(args[3])
+		if err != nil {
+			return resp.NewErrorResponse("expiration time is not an integer value")
+		}
+		switch strings.ToLower(args[2]) {
+		case "ex":
+			time.AfterFunc((time.Second * time.Duration(exp)), func() {
+				cache.Delete(args[0])
+			})
+		case "px":
+			time.AfterFunc((time.Millisecond * time.Duration(exp)), func() {
+				cache.Delete(args[0])
+			})
+		}
+	}
+
+	cache.Set(args[0], cacheItem)
+
+	return resp.NewOKResponse()
 }
 
 func get(args ...string) string {
-	val, err := cache.Get(args[0])
-	if err != nil {
-		return "IDK"
+	if len(args) == 0 {
+		return resp.NewErrorResponse("wrong number of arguments for the get command")
 	}
 
-	return fmt.Sprintf(resp.SIMPLESTRING, val)
+	val, ok := cache.Get(args[0])
+	if !ok {
+		return resp.GetNullBulkString()
+	}
+
+	return resp.NewSimpleString(val.Value)
 }

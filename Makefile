@@ -9,3 +9,6 @@ test:
 
 submit:
 	codecrafters submit
+
+run:
+	go run ./...
