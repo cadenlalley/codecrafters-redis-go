@@ -3,9 +3,12 @@ package resp
 import "fmt"
 
 const (
-	BULKSTRINGFORMATTING   = "$%d\r\n%s\r\n"
-	SIMPLESTRINGFORMATTING = "+%s\r\n"
-	SIMPLEERRORFORMATTING  = "-ERR %s\r\n"
+	BULKSTRINGFORMATTING      = "$%d\r\n%s\r\n"
+	SIMPLESTRINGFORMATTING    = "+%s\r\n"
+	SIMPLEERRORFORMATTING     = "-ERR %s\r\n"
+	UNSIGNEDINTEGERFORMATTING = ":%d\r\n"
+	POSITIVEINTEGERFORMATTING = ":+%d\r\n"
+	NEGATIVEINTEGERFORMATTING = ":-%d\r\n"
 )
 
 const (
@@ -18,6 +21,10 @@ func NewSimpleString(input any) string {
 
 func NewBulkString(input string) string {
 	return fmt.Sprintf(BULKSTRINGFORMATTING, len(input), input)
+}
+
+func NewUnsignedInteger(intput int) string {
+	return fmt.Sprintf(UNSIGNEDINTEGERFORMATTING, intput)
 }
 
 func NewOKResponse() string {

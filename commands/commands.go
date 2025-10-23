@@ -15,10 +15,11 @@ type Command struct {
 }
 
 const (
-	PING = "ping"
-	ECHO = "echo"
-	SET  = "set"
-	GET  = "get"
+	PING  = "ping"
+	ECHO  = "echo"
+	SET   = "set"
+	GET   = "get"
+	RPUSH = "rpush"
 )
 
 func (c Command) Run() string {
@@ -31,6 +32,8 @@ func (c Command) Run() string {
 		return set(c.Arguments...)
 	case GET:
 		return get(c.Arguments...)
+	case RPUSH:
+		return listPush(c.Arguments...)
 	default:
 		return resp.NewErrorResponse("command not found")
 	}
@@ -90,4 +93,30 @@ func get(args ...string) string {
 	}
 
 	return resp.NewSimpleString(val.Value)
+}
+
+func listPush(args ...string) string {
+	if len(args) < 2 {
+		return resp.NewErrorResponse("wrong number of arguments for the rpush command")
+	}
+
+	item, ok := cache.Get(args[0])
+	if !ok {
+		newItem := cache.Item{
+			Value: []any{args[1:]},
+		}
+		cache.Set(args[0], newItem)
+
+		return resp.NewUnsignedInteger(1)
+	}
+
+	slice, ok := item.Value.([]any)
+	if !ok {
+		return resp.NewErrorResponse("value is not a list")
+	}
+	slice = append(slice, args[1])
+
+	item.Value = slice
+
+	return resp.NewUnsignedInteger(len(slice))
 }

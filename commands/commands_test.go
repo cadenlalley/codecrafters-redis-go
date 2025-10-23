@@ -11,7 +11,6 @@ func TestEcho(t *testing.T) {
 		name             string
 		command          Command
 		expectedResponse string
-		shouldError      bool
 	}{
 		{
 			name: "valid echo",
@@ -20,7 +19,14 @@ func TestEcho(t *testing.T) {
 				Arguments: []string{"hey"},
 			},
 			expectedResponse: "$3\r\nhey\r\n",
-			shouldError:      false,
+		},
+		{
+			name: "no args",
+			command: Command{
+				Command:   "ECHO",
+				Arguments: []string{},
+			},
+			expectedResponse: "-ERR wrong number of arguments for the echo command\r\n",
 		},
 	}
 
